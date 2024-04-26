@@ -72,7 +72,7 @@ const getMovementsFromTransactionHash = async (transactionHash: string | undefin
         // console.error('Error fetching movements', error);
         throw new Error('Error fetching movements');
     }
-};
+}
 
 const getAllMovementsFromTransactionHash = async (transactionHash: string | undefined): Promise<Movement[]> => {
     let movements: any = [];
@@ -85,7 +85,7 @@ const getAllMovementsFromTransactionHash = async (transactionHash: string | unde
         } while (cursor);
         return movements;
     } catch (error) {
-        throw new Error('Error fetching movements');
+        throw new Error('Error fetching movements: check your environment variables');
     }
 };
 
@@ -94,7 +94,7 @@ const updateMovementLabel = async (movementIds: string[], label: string) => {
         await axiosInstance.post(`label/${label}/apply`, {movements: movementIds});
     } catch (error) {
         // console.error('Error updating label', error);
-        throw new Error('Error updating labels');
+        throw new Error('Error updating labels: check your environment variables');
     }
 };
 
@@ -116,36 +116,39 @@ const calculateLabelByAssetClass = (movements: Movement[]) => {
 
 const main = async () => {
 
-    console.log('Starting script')
+    try {
+        console.log('Starting script')
 
-    const movements = await getAllMovementsFromTransactionHash(HASH);
+        const movements = await getAllMovementsFromTransactionHash(HASH);
 
-    console.log('Movements fetched', movements);
+        console.log('Movements fetched', movements);
 
-    const labelByAssetClass = calculateLabelByAssetClass(movements);
+        const labelByAssetClass = calculateLabelByAssetClass(movements);
 
-    console.log('Label by asset class', labelByAssetClass);
+        console.log('Label by asset class', labelByAssetClass);
 
-    const movementsByLabel: { [key: string]: string[] } = {
-        [Label.REVENUE]: [],
-        [Label.IGNORE]: [],
-    };
+        const movementsByLabel: { [key: string]: string[] } = {
+            [Label.REVENUE]: [],
+            [Label.IGNORE]: [],
+        };
 
-    lodash.forEach(labelByAssetClass, (label, asset) => {
-        const movementIds = movements
-            .filter((movement: any) => movement.asset === asset)
-            .map((movement: any) => movement.id);
-        movementsByLabel[label].push(...movementIds);
-    });
+        lodash.forEach(labelByAssetClass, (label, asset) => {
+            const movementIds = movements
+                .filter((movement: any) => movement.asset === asset)
+                .map((movement: any) => movement.id);
+            movementsByLabel[label].push(...movementIds);
+        });
 
-    console.log('Updating labels');
+        console.log('Updating labels');
 
-    for (const label in movementsByLabel) {
-        await updateMovementLabel(movementsByLabel[label], label);
+        for (const label in movementsByLabel) {
+            await updateMovementLabel(movementsByLabel[label], label);
+        }
+        console.log('IGNORE', movementsByLabel[Label.IGNORE]);
+        console.log('REVENUE', movementsByLabel[Label.REVENUE]);
+    } catch (error) {
+        console.error('Could not update Labels: ', error);
     }
-    console.log('IGNORE', movementsByLabel[Label.IGNORE]);
-    console.log('REVENUE', movementsByLabel[Label.REVENUE]);
-
 }
 
 main().then(() => { console.log ('DONE')});

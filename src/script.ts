@@ -121,7 +121,7 @@ const main = async () => {
 
         const movements = await getAllMovementsFromTransactionHash(HASH);
 
-        console.log('Movements fetched', movements);
+        console.log('Movements fetched');
 
         const labelByAssetClass = calculateLabelByAssetClass(movements);
 

@@ -126,6 +126,25 @@ const main = async () => {
 
     console.log('Label by asset class', labelByAssetClass);
 
+    const movementsByLabel: { [key: string]: string[] } = {
+        [Label.REVENUE]: [],
+        [Label.IGNORE]: [],
+    };
+
+    lodash.forEach(labelByAssetClass, (label, asset) => {
+        const movementIds = movements
+            .filter((movement: any) => movement.asset === asset)
+            .map((movement: any) => movement.id);
+        movementsByLabel[label].push(...movementIds);
+    });
+
+    console.log('Updating labels');
+
+    for (const label in movementsByLabel) {
+        await updateMovementLabel(movementsByLabel[label], label);
+    }
+    console.log('IGNORE', movementsByLabel[Label.IGNORE]);
+    console.log('REVENUE', movementsByLabel[Label.REVENUE]);
 
 }
 
